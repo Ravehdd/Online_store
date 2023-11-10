@@ -33,6 +33,24 @@ class ProductsAPIView(generics.ListAPIView):
         return Response("Товар успешно добавлен в корзину")
 
 
+class SearchAPI(generics.ListAPIView):
+    def post(self, request):
+        serializer = SearchSerializer(data=request.data)
+        serializer.is_valid()
+        product_name = request.data["product_name"]
+        product_name_split = product_name.split(" ")
+        matches = []
+        unique_matches = []
+        for name in product_name_split:
+            match = Products.objects.filter(name__icontains=name).values()
+            matches.extend(match)
+        for match in matches:
+            if match not in unique_matches:
+                unique_matches.append(match)
+
+        return Response({"search_result": unique_matches})
+
+
 def PageNotFound(request, exception):
     return HttpResponseNotFound("<h1>Page not found!</h1>")
 

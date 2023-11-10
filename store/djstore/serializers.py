@@ -9,5 +9,9 @@ class ListViewSerializer(serializers.ModelSerializer):
         fields = ("name", "price", "description", "in_stock")
 
 
+class SearchSerializer(serializers.Serializer):
+    product_name = serializers.CharField(max_length=255)
+
+
 class AddToCartSerializer(serializers.Serializer):
     id = serializers.IntegerField()
