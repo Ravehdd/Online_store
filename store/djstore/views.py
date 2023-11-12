@@ -80,6 +80,20 @@ class RemoveFromCartAPI(APIView):
             return Response({"status": 404, "response": "Record not found"})
 
 
+class CartViewAPI(APIView):
+    def get(self, request):
+        auth_header = request.META.get("HTTP_AUTHORIZATION")
+        auth_type, auth_token = auth_header.split(" ")
+        with (sqlite3.connect("db.sqlite3") as connection):
+            cursor = connection.cursor()
+            cursor.execute(f"SELECT user_id FROM authtoken_token WHERE key='{auth_token}'")
+            user_id = cursor.fetchone()[0]
+        products = Cart.objects.filter(user_id=user_id).values()
+        return Response(products)
+
+
+
+
 def PageNotFound(request, exception):
     return HttpResponseNotFound("<h1>Page not found!</h1>")
 
