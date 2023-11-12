@@ -63,6 +63,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 
+
 ROOT_URLCONF = "store.urls"
 
 TEMPLATES = [
