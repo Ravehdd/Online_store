@@ -7,6 +7,8 @@ class Products(models.Model):
     description = models.TextField(null=True)
     in_stock = models.IntegerField()
     photo = models.ImageField(upload_to="photos/", null=True)
+    is_published = models.BooleanField(default=True)
+
 
     def __str__(self):
         return self.name

@@ -9,26 +9,23 @@ from rest_framework.views import APIView
 from .serializers import *
 
 
+def getToken(request):
+    auth_header = request.META.get("HTTP_AUTHORIZATION")
+    auth_type, auth_token = auth_header.split(" ")
+    return auth_token
+
+
 class ProductsAPIView(generics.ListAPIView):
-    queryset = Products.objects.all()
+    queryset = Products.objects.filter(is_published=True).all()
     serializer_class = ListViewSerializer
     permission_classes = (IsAuthenticated,)
-
-    # def get(self, request):
-    #     data = Products.objects.values()
-    #     products = [ListViewModel(**item) for item in data]
-    #     result = [model.model_dump() for model in products]
-    #     print(result)
-    #     return Response(result)
 
 
 class AddToCartAPI(APIView):
     def post(self, request):
-        auth_header = request.META.get("HTTP_AUTHORIZATION")
-        auth_type, auth_token = auth_header.split(" ")
-
-        # data = SearchModel(**request.data)
-        # print(data)
+        auth_token = getToken(request)
+        # auth_header = request.META.get("HTTP_AUTHORIZATION")
+        # auth_type, auth_token = auth_header.split(" ")
         serializer = AddToCartSerializer(data=request.data)
         serializer.is_valid()
         product_id = request.data["id"]
@@ -73,6 +70,7 @@ class RemoveFromCartAPI(APIView):
         serializer.is_valid()
         product_id = request.data["product_id"]
         user_id = request.data["user_id"]
+
         try:
             product_on_delete = Cart.objects.get(product_id=product_id, user_id=user_id)
             product_on_delete.delete()
@@ -83,14 +81,14 @@ class RemoveFromCartAPI(APIView):
 
 class CartViewAPI(APIView):
     def get(self, request):
-        auth_header = request.META.get("HTTP_AUTHORIZATION")
-        auth_type, auth_token = auth_header.split(" ")
+        auth_token = getToken(request)
+
         with (sqlite3.connect("db.sqlite3") as connection):
             cursor = connection.cursor()
             cursor.execute(f"SELECT user_id FROM authtoken_token WHERE key='{auth_token}'")
             user_id = cursor.fetchone()[0]
         products = Cart.objects.filter(user_id=user_id).values()
-        return Response(products)
+        return Response({"status": 200,"response": products})
 
 
 def PageNotFound(request, exception):

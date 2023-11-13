@@ -5,9 +5,9 @@ from .models import *
 
 
 class ProductsAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "in_stock", "description", "price")
+    list_display = ("id", "name", "in_stock", "description", "price", "get_html_photo", "is_published")
     list_display_links = ("id", "name", "in_stock",)
-    # list_editable = ("is_published",)
+    list_editable = ("is_published",)
     # list_filter = ("title", "time_create")
     # prepopulated_fields = {"slug": ("title",)}
     # fields = ("title", "slug", "cat", "content", "photo", "get_html_photo", "is_published", "time_create")
@@ -26,5 +26,11 @@ class ProductsAdmin(admin.ModelAdmin):
 #     prepopulated_fields = {"slug": ("name",)}
 #
 #
+
+    def get_html_photo(self, object):
+        if object.photo:
+            return mark_safe(f"<img src='{object.photo.url}' width=200>")
+
+    get_html_photo.short_description = "Photo"
 admin.site.register(Products, ProductsAdmin)
 # admin.site.register(Cart, CategoryAdmin)
