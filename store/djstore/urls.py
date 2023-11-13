@@ -19,6 +19,7 @@ urlpatterns = [
     path("api/v1/drf-auth/", include("rest_framework.urls")),
     path("api/v1/delete/", RemoveFromCartAPI.as_view(), name="delete"),
     path("api/v1/cart-list/", CartViewAPI.as_view()),
+    path("api/v1/add-to-cart/", AddToCartAPI.as_view(), name="add"),
     path("api/v1/auth/", include("djoser.urls")),
     re_path(r"^auth/", include("djoser.urls.authtoken")),
     path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

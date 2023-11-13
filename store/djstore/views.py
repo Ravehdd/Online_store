@@ -9,7 +9,6 @@ from rest_framework.views import APIView
 from .serializers import *
 
 
-
 class ProductsAPIView(generics.ListAPIView):
     queryset = Products.objects.all()
     serializer_class = ListViewSerializer
@@ -22,6 +21,8 @@ class ProductsAPIView(generics.ListAPIView):
     #     print(result)
     #     return Response(result)
 
+
+class AddToCartAPI(APIView):
     def post(self, request):
         auth_header = request.META.get("HTTP_AUTHORIZATION")
         auth_type, auth_token = auth_header.split(" ")
@@ -90,8 +91,6 @@ class CartViewAPI(APIView):
             user_id = cursor.fetchone()[0]
         products = Cart.objects.filter(user_id=user_id).values()
         return Response(products)
-
-
 
 
 def PageNotFound(request, exception):
