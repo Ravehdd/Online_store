@@ -4,6 +4,8 @@ from django.urls import path, include, re_path
 from .views import *
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
+from django.views.decorators.cache import cache_page
+
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -14,7 +16,7 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path("api/v1/list/", ProductsAPIView.as_view(), name="home"),
+    path("api/v1/list/", cache_page(60)(ProductsAPIView.as_view()), name="home"),
     path("api/v1/search/", SearchAPI.as_view(), name="search"),
     path("api/v1/drf-auth/", include("rest_framework.urls")),
     path("api/v1/delete/", RemoveFromCartAPI.as_view(), name="delete"),

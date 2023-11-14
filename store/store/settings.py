@@ -142,3 +142,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
      ]
 }
+CACHES = {
+    'default': {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": os.path.join(BASE_DIR, 'store_cache')
+    }
+}

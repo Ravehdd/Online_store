@@ -1,5 +1,4 @@
 import sqlite3
-
 from django.shortcuts import render, HttpResponse, redirect
 from django.http import HttpResponseNotFound
 from rest_framework import generics
