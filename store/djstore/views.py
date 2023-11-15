@@ -1,5 +1,6 @@
 import sqlite3
-from django.shortcuts import render, HttpResponse, redirect
+
+from django.db.models import Max, Min, Q
 from django.http import HttpResponseNotFound
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -21,6 +22,8 @@ class ProductsAPIView(generics.ListAPIView):
 
 
 class AddToCartAPI(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def post(self, request):
         auth_token = getToken(request)
         # auth_header = request.META.get("HTTP_AUTHORIZATION")
@@ -46,6 +49,8 @@ class AddToCartAPI(APIView):
 
 
 class SearchAPI(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+
     def post(self, request):
         serializer = SearchSerializer(data=request.data)
         serializer.is_valid()
@@ -60,10 +65,61 @@ class SearchAPI(generics.ListAPIView):
             if match not in unique_matches:
                 unique_matches.append(match)
 
-        return Response({"status": 200, "search_result": unique_matches})
+        return Response({"status": 200, "data": unique_matches})
+
+
+class SearchFilterAPI(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        categories = Category.objects.values_list("cat_name", flat=True)
+        price_interval = Products.objects.aggregate(Min("price"), Max("price")).values()
+        print(categories, price_interval)
+        return Response({"status": 200, "data": [{"categories": categories}, {"price_interval": price_interval}]})
+
+    def post(self, request):
+        serializer = SearchFilterSerializer(data=request.data)
+        serializer.is_valid()
+        selected_categories = request.data["category"]
+        price_interval = request.data["price_interval"]
+
+        if selected_categories:
+            category_ids = Category.objects.filter(cat_name__in=selected_categories).values_list("id", flat=True)
+            products_sort_id = Products.objects.filter(category_id__in=category_ids).order_by()
+
+            if price_interval:
+                products_sort_price = Products.objects.filter(
+                    Q(price__gte=sorted(price_interval)[0]) & Q(price__lte=sorted(price_interval)[1])).order_by()
+                products = products_sort_id.intersection(products_sort_price).values()
+                print(products)
+
+                return Response({"status": 200, "data": products})
+
+        if price_interval:
+            products_sort_price = Products.objects.filter(
+                Q(price__gte=sorted(price_interval)[0]) & Q(price__lte=sorted(price_interval)[1]))
+
+            return Response({"status": 200, "data": products_sort_price})
+
+        products = Products.objects.all().values()
+        return Response({"status": 200, "data": products})
+
+
+
+
+
+
+
+        # print(selected_categories, price_interval)
+
+
+
+
 
 
 class RemoveFromCartAPI(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def post(self, request):
         serializer = RemoveFromCartSerializer(data=request.data)
         serializer.is_valid()
@@ -79,6 +135,8 @@ class RemoveFromCartAPI(APIView):
 
 
 class CartViewAPI(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def get(self, request):
         auth_token = getToken(request)
 
@@ -87,7 +145,7 @@ class CartViewAPI(APIView):
             cursor.execute(f"SELECT user_id FROM authtoken_token WHERE key='{auth_token}'")
             user_id = cursor.fetchone()[0]
         products = Cart.objects.filter(user_id=user_id).values()
-        return Response({"status": 200,"response": products})
+        return Response({"status": 200,"data": products})
 
 
 def PageNotFound(request, exception):

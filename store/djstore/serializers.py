@@ -29,6 +29,11 @@ class AddToCartSerializer(serializers.Serializer):
     id = serializers.IntegerField()
 
 
+class SearchFilterSerializer(serializers.Serializer):
+    category = serializers.ListField()
+    price_interval = serializers.ListField()
+
+
 class RemoveFromCartSerializer(serializers.Serializer):
     product_id = serializers.IntegerField()
     user_id = serializers.IntegerField()
