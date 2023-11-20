@@ -16,6 +16,7 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    path("", index),
     path("api/v1/list/", cache_page(60)(ProductsAPIView.as_view()), name="home"),
     path("api/v1/search/", SearchAPI.as_view(), name="search"),
     # path("api/v1/drf-auth/", include("rest_framework.urls")),

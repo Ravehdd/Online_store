@@ -1,7 +1,7 @@
 import sqlite3
-
+import requests
 from django.db.models import Max, Min, Q
-from django.http import HttpResponseNotFound
+from django.http import HttpResponseNotFound, HttpResponse
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -18,7 +18,7 @@ def getToken(request):
 class ProductsAPIView(generics.ListAPIView):
     queryset = Products.objects.filter(is_published=True).all()
     serializer_class = ListViewSerializer
-    permission_classes = (IsAuthenticated,)
+    # permission_classes = (IsAuthenticated,)
 
 
 class AddToCartAPI(APIView):
@@ -145,7 +145,16 @@ class CartViewAPI(APIView):
             cursor.execute(f"SELECT user_id FROM authtoken_token WHERE key='{auth_token}'")
             user_id = cursor.fetchone()[0]
         products = Cart.objects.filter(user_id=user_id).values()
-        return Response({"status": 200,"data": products})
+        return Response({"status": 200, "data": products})
+
+
+def index(request):
+    response = requests.get("http://www.auchan.ru/catalog/konditerskie-izdeliya/shokolad-shokoladnye-batonchiki/")
+    print(response.status_code)
+    if response:
+        return HttpResponse("hello")
+    else:
+        return HttpResponse("not hello")
 
 
 def PageNotFound(request, exception):
