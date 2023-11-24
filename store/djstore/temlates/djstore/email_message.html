@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>New request to order</title>
+</head>
+<body>
+    {% for product in products %}
+        <div class="product_card">
+            <h2>{{ product.name }}</h2>
+            <p>{{ product.price }}</p>
+        </div>
+    {% endfor %}
+
+</body>
+</html>

@@ -4,8 +4,8 @@ from .models import *
 
 
 class ProductsAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "in_stock", "description", "price", "get_html_photo", "is_published")
-    list_display_links = ("id", "name", "in_stock",)
+    list_display = ("id", "name", "description", "price", "get_html_photo", "is_published")
+    list_display_links = ("id", "name")
     list_editable = ("is_published",)
     # list_filter = ("title", "time_create")
     # prepopulated_fields = {"slug": ("title",)}

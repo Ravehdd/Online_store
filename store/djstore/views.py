@@ -2,11 +2,17 @@ import sqlite3
 import requests
 from django.db.models import Max, Min, Q
 from django.http import HttpResponseNotFound, HttpResponse
+from django.template.loader import render_to_string
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.contrib.auth.models import User
 from .serializers import *
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+# from .config import sender_email, sender_password
 
 
 def getToken(request):
@@ -105,18 +111,6 @@ class SearchFilterAPI(APIView):
         return Response({"status": 200, "data": products})
 
 
-
-
-
-
-
-        # print(selected_categories, price_interval)
-
-
-
-
-
-
 class RemoveFromCartAPI(APIView):
     permission_classes = (IsAuthenticated,)
 
@@ -148,13 +142,56 @@ class CartViewAPI(APIView):
         return Response({"status": 200, "data": products})
 
 
-def index(request):
-    response = requests.get("http://www.auchan.ru/catalog/konditerskie-izdeliya/shokolad-shokoladnye-batonchiki/")
-    print(response.status_code)
-    if response:
-        return HttpResponse("hello")
-    else:
-        return HttpResponse("not hello")
+class MakeOrderAPI(APIView):
+    def post(self, request):
+
+        with (sqlite3.connect("db.sqlite3") as connection):
+            auth_token = getToken(request)
+            cursor = connection.cursor()
+            cursor.execute(f"SELECT user_id FROM authtoken_token WHERE key='{auth_token}'")
+            user_id = cursor.fetchone()[0]
+
+        receiver_email = User.objects.filter(id=user_id).values("email")[0]["email"]
+        # print(receiver_email)
+
+        serializer = MakeOrderSerializer(data=request.data)
+        serializer.is_valid()
+        product_id = request.data["product_id"]
+        products = Products.objects.filter(id__in=product_id).values()
+        # print(products)
+
+        smtp_server = 'smtp.gmail.com'
+        port = 587
+        server = smtplib.SMTP(smtp_server, port)
+        server.starttls()
+        sender_email = "max.ershov.spb@gmail.com"
+        sender_password = "oxmmejcdteobrypg"
+        try:
+            server.login(sender_email, sender_password)
+
+            table = '<table><tr><th>Название</th><th>Цена</th></tr>'
+            for product in products:
+                table += f'<tr><td>{product["name"]}</td><td>{product["price"]}</td></tr>'
+            table += '</table>'
+            table += "Контакты заказчика: " + receiver_email
+            print(table)
+            # server.sendmail(sender_email, sender_email, table)
+            msg = MIMEMultipart()
+            msg['From'] = sender_email
+            msg['To'] = sender_email
+            msg['Subject'] = "Заявка на заказ"
+            body = MIMEText(table, "html")
+            msg.attach(body)
+            server.send_message(msg)
+            print('Сообщение отправлено успешно!')
+
+        except Exception as e:
+            print('Произошла ошибка при отправке сообщения:', e)
+
+        finally:
+            server.quit()
+
+        return Response({"status": 200, "response": "Request to order have been sent successfully! Wait for response on your email."})
 
 
 def PageNotFound(request, exception):
