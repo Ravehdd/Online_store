@@ -7,7 +7,7 @@ from pydantic import BaseModel
 class ListViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Products
-        fields = ("name", "price", "description") #убрал поле in_stock
+        fields = ("name", "price", "description", "photo") #убрал поле in_stock
 
 
 class SearchSerializer(serializers.Serializer):

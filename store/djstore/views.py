@@ -152,7 +152,7 @@ class MakeOrderAPI(APIView):
             user_id = cursor.fetchone()[0]
 
         receiver_email = User.objects.filter(id=user_id).values("email")[0]["email"]
-        # print(receiver_email)
+        # print(receiver_email)жжжж
 
         serializer = MakeOrderSerializer(data=request.data)
         serializer.is_valid()
