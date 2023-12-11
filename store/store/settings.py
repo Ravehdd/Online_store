@@ -95,15 +95,17 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 EMAIL_PORT = 587
 
-# DJOSER = {
-#     'ACTIVATION_URL': '#/activate/{uid}/{token}',  # настройка URL для активации аккаунта
-#     'SEND_ACTIVATION_EMAIL': True,  # отправка письма с активацией
-#     'SEND_CONFIRMATION_EMAIL': True,  # отправка письма с подтверждением регистрации
-#     'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',  # настройка URL для сброса пароля
-#     'USERNAME_CHANGED_EMAIL_CONFIRMATION': True,  # отправка письма с подтверждением изменения имени пользователя
-#     'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,  # отправка письма с подтверждением изменения пароля
-#     'TOKEN_MODEL': None,  # модель для хранения токенов (по умолчанию используется django.contrib.auth.tokens.PasswordResetTokenGenerator)
-# }
+LOGIN_AFTER_ACTIVATION = True
+DJOSER = {
+    "LOGIN_AFTER_ACTIVATION": True
+    # 'ACTIVATION_URL': '/activate/{uid}/{token}',  # настройка URL для активации аккаунта
+    # 'SEND_ACTIVATION_EMAIL': True,  # отправка письма с активацией
+    # 'SEND_CONFIRMATION_EMAIL': True,  # отправка письма с подтверждением регистрации
+    # 'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',  # настройка URL для сброса пароля
+    # 'USERNAME_CHANGED_EMAIL_CONFIRMATION': True,  # отправка письма с подтверждением изменения имени пользователя
+    # 'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,  # отправка письма с подтверждением изменения пароля
+    # 'TOKEN_MODEL': None,  # модель для хранения токенов (по умолчанию используется django.contrib.auth.tokens.PasswordResetTokenGenerator)
+}
 
 
 

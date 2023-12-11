@@ -1,10 +1,13 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include, re_path
+from djoser.views import TokenCreateView
+
 from .views import *
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from django.views.decorators.cache import cache_page
+
 
 
 schema_view = get_schema_view(

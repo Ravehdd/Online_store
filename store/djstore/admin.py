@@ -20,6 +20,15 @@ class ProductsAdmin(admin.ModelAdmin):
     get_html_photo.short_description = "Photo"
 
 
+class WarModelConnectionInline(admin.TabularInline):
+    model = WarModelConnection
+
+
+class WarAdmin(admin.ModelAdmin):
+    inlines = [
+        WarModelConnectionInline,
+    ]
+
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ("id", "cat_name")
     list_display_links = ("cat_name", )
@@ -27,3 +36,6 @@ class CategoryAdmin(admin.ModelAdmin):
 
 admin.site.register(Products, ProductsAdmin)
 admin.site.register(Category, CategoryAdmin)
+admin.site.register(War)
+admin.site.register(WarModelConnection)
+

@@ -1,4 +1,6 @@
 import sqlite3
+import os
+from dotenv import load_dotenv
 import requests
 from django.db.models import Max, Min, Q
 from django.http import HttpResponseNotFound, HttpResponse
@@ -46,7 +48,7 @@ class AddToCartAPI(APIView):
         try:
             same_product = Cart.objects.get(product_id=product_id, user_id=user_id)
             amount = same_product.amount
-            same_product.amount = amount + 10
+            same_product.amount = amount + 1
             same_product.save()
             return Response({"status": 204, "response": "Updated successfully"})
         except:
@@ -80,8 +82,11 @@ class SearchFilterAPI(APIView):
     def get(self, request):
         categories = Category.objects.values_list("cat_name", flat=True)
         price_interval = Products.objects.aggregate(Min("price"), Max("price")).values()
-        print(categories, price_interval)
-        return Response({"status": 200, "data": [{"categories": categories}, {"price_interval": price_interval}]})
+        countries = Country.objects.all().values_list("country_name", flat=True)
+        wars = War.objects.all().values_list("war_name", flat=True)
+        return Response({"status": 200, "data": [{"categories": categories}, {"price_interval": price_interval},
+                                                 {"countries": countries}, {"wars": wars}]})
+
 
     def post(self, request):
         serializer = SearchFilterSerializer(data=request.data)
@@ -138,8 +143,15 @@ class CartViewAPI(APIView):
             cursor = connection.cursor()
             cursor.execute(f"SELECT user_id FROM authtoken_token WHERE key='{auth_token}'")
             user_id = cursor.fetchone()[0]
-        products = Cart.objects.filter(user_id=user_id).values()
-        return Response({"status": 200, "data": products})
+        products = Cart.objects.filter(user_id=user_id).values("product_id", "amount")
+        products_info = []
+        for product in products:
+            product_id = product["product_id"]
+            product_amount = product["amount"]
+            product_info = dict(Products.objects.filter(id=product_id).values("name", "price", "description", "photo")[0])
+            product_info["amount"] = product_amount
+            products_info.append(product_info)
+        return Response({"status": 200, "data": products_info})
 
 
 class MakeOrderAPI(APIView):
@@ -152,11 +164,13 @@ class MakeOrderAPI(APIView):
             user_id = cursor.fetchone()[0]
 
         receiver_email = User.objects.filter(id=user_id).values("email")[0]["email"]
-        # print(receiver_email)жжжж
+
 
         serializer = MakeOrderSerializer(data=request.data)
         serializer.is_valid()
         product_id = request.data["product_id"]
+        if not product_id:
+            return Response({"status": "pizda"})
         products = Products.objects.filter(id__in=product_id).values()
         # print(products)
 
@@ -164,8 +178,10 @@ class MakeOrderAPI(APIView):
         port = 587
         server = smtplib.SMTP(smtp_server, port)
         server.starttls()
-        sender_email = "max.ershov.spb@gmail.com"
-        sender_password = "oxmmejcdteobrypg"
+        # EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+        # EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+        sender_email = os.getenv("EMAIL_HOST_USER")
+        sender_password = os.getenv("EMAIL_HOST_PASSWORD")
         try:
             server.login(sender_email, sender_password)
 
@@ -174,7 +190,7 @@ class MakeOrderAPI(APIView):
                 table += f'<tr><td>{product["name"]}</td><td>{product["price"]}</td></tr>'
             table += '</table>'
             table += "Контакты заказчика: " + receiver_email
-            print(table)
+            # print(table)
             # server.sendmail(sender_email, sender_email, table)
             msg = MIMEMultipart()
             msg['From'] = sender_email
@@ -194,6 +210,10 @@ class MakeOrderAPI(APIView):
         return Response({"status": 200, "response": "Request to order have been sent successfully! Wait for response on your email."})
 
 
+
+
 def PageNotFound(request, exception):
     return HttpResponseNotFound("<h1>Page not found!</h1>")
+
+
 
