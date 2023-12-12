@@ -8,6 +8,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from django.contrib.auth.models import User
 from .serializers import *
 import smtplib
@@ -92,24 +93,57 @@ class SearchFilterAPI(APIView):
         serializer.is_valid()
         selected_categories = request.data["category"]
         price_interval = request.data["price_interval"]
+        countries = request.data["countries"]
+        wars = request.data["wars"]
 
-        if selected_categories:
-            category_ids = Category.objects.filter(cat_name__in=selected_categories).values_list("id", flat=True)
-            products_sort_id = Products.objects.filter(category_id__in=category_ids).order_by()
-
-            if price_interval:
-                products_sort_price = Products.objects.filter(
-                    Q(price__gte=sorted(price_interval)[0]) & Q(price__lte=sorted(price_interval)[1])).order_by()
-                products = products_sort_id.intersection(products_sort_price).values()
-                print(products)
-
-                return Response({"status": 200, "data": products})
+        # if selected_categories:
+        #     category_ids = Category.objects.filter(cat_name__in=selected_categories).values_list("id", flat=True)
+        #     products_sort_id = Products.objects.filter(category_id__in=category_ids).order_by()
+        #
+        #     if price_interval:
+        #         products_sort_price = Products.objects.filter(
+        #             Q(price__gte=sorted(price_interval)[0]) & Q(price__lte=sorted(price_interval)[1])).order_by()
+        #         products = products_sort_id.intersection(products_sort_price).values()
+        #
+        #         return Response({"status": 200, "data": products})
 
         if price_interval:
             products_sort_price = Products.objects.filter(
                 Q(price__gte=sorted(price_interval)[0]) & Q(price__lte=sorted(price_interval)[1]))
+        else:
+            products_sort_price = Products.objects.all().values()
 
-            return Response({"status": 200, "data": products_sort_price})
+        if selected_categories:
+            category_ids = Category.objects.filter(cat_name__in=selected_categories).values_list("id", flat=True)
+            products_sort_id = Products.objects.filter(category_id__in=category_ids).order_by()
+        else:
+            products_sort_id = Products.objects.all().values()
+
+        if price_interval:
+            products_sort_price = Products.objects.filter(
+                Q(price__gte=sorted(price_interval)[0]) & Q(price__lte=sorted(price_interval)[1])).order_by()
+        else:
+            products_sort_id = Products.objects.all().values()
+
+        # if wars:
+        #     war_ids = War.objects.filter(war_name__in=wars).values_list("id", flat=True)
+        #     products_sort_war = Products.objects.filter(war_id__in=war_ids).order_by()
+        # else:
+        #     products_sort_war = Products.objects.all().values()
+
+        if countries:
+            country_ids = Country.objects.filter(country_name__in=countries).values_list("id", flat=True)
+            products_sort_country = Products.objects.filter(country_id__in=country_ids).order_by()
+        else:
+            products_sort_country = Products.objects.all().values()
+
+        print(products_sort_id, products_sort_price, products_sort_country)
+
+
+
+
+
+
 
         products = Products.objects.all().values()
         return Response({"status": 200, "data": products})
