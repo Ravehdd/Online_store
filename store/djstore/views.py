@@ -1,7 +1,6 @@
 import sqlite3
 import os
-from dotenv import load_dotenv
-import requests
+
 from django.db.models import Max, Min, Q
 from django.http import HttpResponseNotFound, HttpResponse
 from django.template.loader import render_to_string
