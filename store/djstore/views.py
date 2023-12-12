@@ -3,7 +3,7 @@ import os
 
 from django.db.models import Max, Min, Q
 from django.http import HttpResponseNotFound, HttpResponse
-from django.template.loader import render_to_string
+
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
