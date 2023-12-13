@@ -87,7 +87,6 @@ class SearchFilterAPI(APIView):
         return Response({"status": 200, "data": [{"categories": categories}, {"price_interval": price_interval},
                                                  {"countries": countries}, {"wars": wars}]})
 
-
     def post(self, request):
         serializer = SearchFilterSerializer(data=request.data)
         serializer.is_valid()
@@ -96,57 +95,49 @@ class SearchFilterAPI(APIView):
         countries = request.data["countries"]
         wars = request.data["wars"]
 
-        # if selected_categories:
-        #     category_ids = Category.objects.filter(cat_name__in=selected_categories).values_list("id", flat=True)
-        #     products_sort_id = Products.objects.filter(category_id__in=category_ids).order_by()
-        #
-        #     if price_interval:
-        #         products_sort_price = Products.objects.filter(
-        #             Q(price__gte=sorted(price_interval)[0]) & Q(price__lte=sorted(price_interval)[1])).order_by()
-        #         products = products_sort_id.intersection(products_sort_price).values()
-        #
-        #         return Response({"status": 200, "data": products})
-
-        if price_interval:
-            products_sort_price = Products.objects.filter(
-                Q(price__gte=sorted(price_interval)[0]) & Q(price__lte=sorted(price_interval)[1]))
-        else:
-            products_sort_price = Products.objects.all().values()
-
-        if selected_categories:
-            category_ids = Category.objects.filter(cat_name__in=selected_categories).values_list("id", flat=True)
-            products_sort_id = Products.objects.filter(category_id__in=category_ids).order_by()
-        else:
-            products_sort_id = Products.objects.all().values()
-
         if price_interval:
             products_sort_price = Products.objects.filter(
                 Q(price__gte=sorted(price_interval)[0]) & Q(price__lte=sorted(price_interval)[1])).order_by()
         else:
-            products_sort_id = Products.objects.all().values()
+            products_sort_price = Products.objects.all().order_by()
+        if selected_categories:
+            category_ids = Category.objects.filter(cat_name__in=selected_categories).values_list("id", flat=True)
+            products_sort_id = Products.objects.filter(category_id__in=category_ids).order_by()
+        else:
+            products_sort_id = Products.objects.all().order_by()
+        if wars:
+            war_ids = War.objects.filter(war_name__in=wars).values_list("id", flat=True)
+            product_ids = Products.objects.all().values_list("id", flat=True)
+            product_ids_match = []
+            for product_id in product_ids:
+                with (sqlite3.connect("db.sqlite3") as connection):
+                    cursor = connection.cursor()
 
-        # if wars:
-        #     war_ids = War.objects.filter(war_name__in=wars).values_list("id", flat=True)
-        #     products_sort_war = Products.objects.filter(war_id__in=war_ids).order_by()
-        # else:
-        #     products_sort_war = Products.objects.all().values()
+                    cursor.execute(f"SELECT war_id FROM djstore_products_war WHERE products_id = {product_id}")
+                    war_id_found_tuple = cursor.fetchall()
+                    war_id_found = [w[0] for w in war_id_found_tuple]
+
+                    war_set_1 = set(war_ids)
+                    war_set_2 = set(war_id_found)
+
+                    if war_set_1.issubset(war_set_2):
+                        product_ids_match.append(product_id)
+
+            products_sort_war = Products.objects.filter(id__in=product_ids_match).order_by()
+        else:
+            products_sort_war = Products.objects.all().order_by()
 
         if countries:
             country_ids = Country.objects.filter(country_name__in=countries).values_list("id", flat=True)
             products_sort_country = Products.objects.filter(country_id__in=country_ids).order_by()
         else:
-            products_sort_country = Products.objects.all().values()
+            products_sort_country = Products.objects.all().order_by()
 
-        print(products_sort_id, products_sort_price, products_sort_country)
+        products = products_sort_id.intersection(products_sort_country).values()
+        products2 = products_sort_war.intersection(products_sort_price).values()
+        products3 = products.intersection(products2)
 
-
-
-
-
-
-
-        products = Products.objects.all().values()
-        return Response({"status": 200, "data": products})
+        return Response({"status": 200, "data": products3})
 
 
 class RemoveFromCartAPI(APIView):
@@ -197,7 +188,6 @@ class MakeOrderAPI(APIView):
             user_id = cursor.fetchone()[0]
 
         receiver_email = User.objects.filter(id=user_id).values("email")[0]["email"]
-
 
         serializer = MakeOrderSerializer(data=request.data)
         serializer.is_valid()
