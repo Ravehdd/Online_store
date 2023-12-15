@@ -31,3 +31,8 @@ class RemoveFromCartSerializer(serializers.Serializer):
 class MakeOrderSerializer(serializers.Serializer):
     product_id = serializers.ListField()
 
+
+class EmailVerifySerializer(serializers.Serializer):
+    code = serializers.IntegerField(max_value=9999, min_value=1000)
+
+

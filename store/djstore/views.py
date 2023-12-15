@@ -2,8 +2,8 @@ import sqlite3
 import os
 
 from django.db.models import Max, Min, Q
-from django.http import HttpResponseNotFound, HttpResponse
-
+from django.http import HttpResponseNotFound
+import random
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -20,7 +20,12 @@ from email.mime.multipart import MIMEMultipart
 def getToken(request):
     auth_header = request.META.get("HTTP_AUTHORIZATION")
     auth_type, auth_token = auth_header.split(" ")
-    return auth_token
+
+    with (sqlite3.connect("db.sqlite3") as connection):
+        cursor = connection.cursor()
+        cursor.execute(f"SELECT user_id FROM authtoken_token WHERE key='{auth_token}'")
+        user_id = cursor.fetchone()[0]
+    return user_id
 
 
 class ProductsAPIView(generics.ListAPIView):
@@ -33,17 +38,12 @@ class AddToCartAPI(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
-        auth_token = getToken(request)
+        user_id = getToken(request)
         # auth_header = request.META.get("HTTP_AUTHORIZATION")
         # auth_type, auth_token = auth_header.split(" ")
         serializer = AddToCartSerializer(data=request.data)
         serializer.is_valid()
         product_id = request.data["id"]
-
-        with (sqlite3.connect("db.sqlite3") as connection):
-            cursor = connection.cursor()
-            cursor.execute(f"SELECT user_id FROM authtoken_token WHERE key='{auth_token}'")
-            user_id = cursor.fetchone()[0]
 
         try:
             same_product = Cart.objects.get(product_id=product_id, user_id=user_id)
@@ -161,12 +161,8 @@ class CartViewAPI(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        auth_token = getToken(request)
+        user_id = getToken(request)
 
-        with (sqlite3.connect("db.sqlite3") as connection):
-            cursor = connection.cursor()
-            cursor.execute(f"SELECT user_id FROM authtoken_token WHERE key='{auth_token}'")
-            user_id = cursor.fetchone()[0]
         products = Cart.objects.filter(user_id=user_id).values("product_id", "amount")
         products_info = []
         for product in products:
@@ -180,12 +176,7 @@ class CartViewAPI(APIView):
 
 class MakeOrderAPI(APIView):
     def post(self, request):
-
-        with (sqlite3.connect("db.sqlite3") as connection):
-            auth_token = getToken(request)
-            cursor = connection.cursor()
-            cursor.execute(f"SELECT user_id FROM authtoken_token WHERE key='{auth_token}'")
-            user_id = cursor.fetchone()[0]
+        user_id = getToken(request)
 
         receiver_email = User.objects.filter(id=user_id).values("email")[0]["email"]
 
@@ -233,6 +224,56 @@ class MakeOrderAPI(APIView):
         return Response({"status": 200, "response": "Request to order have been sent successfully! Wait for response on your email."})
 
 
+class EmailVerify(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        user_id = getToken(request)
+        email = User.objects.filter(id=user_id).values("email")[0]["email"]
+        smtp_server = 'smtp.gmail.com'
+        port = 587
+        server = smtplib.SMTP(smtp_server, port)
+        server.starttls()
+        sender_email = os.getenv("EMAIL_HOST_USER")
+        sender_password = os.getenv("EMAIL_HOST_PASSWORD")
+        try:
+            server.login(sender_email, sender_password)
+
+            table = '<table><tr><th>Код подтверждения</th></tr>'
+            verify_code = random.randint(1000, 9999)
+            EmailVerifyCode.objects.create(user_id=user_id, verify_code=verify_code)
+            table += f'<tr><td>{verify_code}</td></tr>'
+
+            # server.sendmail(sender_email, sender_email, table)
+            msg = MIMEMultipart()
+            msg['From'] = sender_email
+            msg['To'] = email
+            msg['Subject'] = "Подтверждение почты"
+            body = MIMEText(table, "html")
+            msg.attach(body)
+            server.send_message(msg)
+            print('Сообщение отправлено успешно!')
+
+        except Exception as e:
+            print('Произошла ошибка при отправке сообщения:', e)
+
+        finally:
+            server.quit()
+
+        return Response({"email": email})
+
+    def post(self, request):
+        serializer = EmailVerifySerializer(data=request.data)
+        serializer.is_valid()
+        user_id = getToken(request)
+        user_code = int(request.data["code"])
+        verify_code = EmailVerifyCode.objects.filter(user_id=user_id).values("verify_code")[0]["verify_code"]
+
+        if user_code == verify_code:
+            Verify.objects.create(verify=True, user_id=user_id)
+            return Response({"status": "200", "response": "The user has been successfully verified"})
+        else:
+            return Response({"status": "400", "response": "Verify code is wrong"})
 
 
 def PageNotFound(request, exception):
