@@ -9,7 +9,6 @@ from drf_yasg.views import get_schema_view
 from django.views.decorators.cache import cache_page
 
 
-
 schema_view = get_schema_view(
     openapi.Info(
         title="API Documentation",

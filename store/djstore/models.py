@@ -46,7 +46,7 @@ class OrderData(models.Model):
 
 
 class Verify(models.Model):
-    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    user = models.OneToOneField(User, on_delete=models.PROTECT)
     verify = models.BooleanField(default=False)
 
 
@@ -63,12 +63,13 @@ class War(models.Model):
     def __str__(self):
         return self.war_name
 
-#
-# class WarModelConnection(models.Model):
-#     model = models.ForeignKey("Products", on_delete=models.PROTECT)
-#     war = models.ForeignKey("War", on_delete=models.PROTECT)
-
 
 class EmailVerifyCode(models.Model):
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     verify_code = models.IntegerField()
+
+
+class Order(models.Model):
+    product = models.ForeignKey(Products, on_delete=models.PROTECT)
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+

@@ -9,12 +9,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django.contrib.auth.models import User
 from .serializers import *
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-# from .config import sender_email, sender_password
 
 
 def getToken(request):
@@ -175,25 +173,28 @@ class CartViewAPI(APIView):
 
 
 class MakeOrderAPI(APIView):
-    def post(self, request):
+    def get(self, request):
         user_id = getToken(request)
-
+        is_verify = Verify.objects.filter(user_id=user_id).values("verify")[0]["verify"]
+        if not is_verify:
+            return Response({"status": 403, "response": "User is not verify"})
         receiver_email = User.objects.filter(id=user_id).values("email")[0]["email"]
 
-        serializer = MakeOrderSerializer(data=request.data)
-        serializer.is_valid()
-        product_id = request.data["product_id"]
+        product_id = Cart.objects.filter(user_id=user_id).values_list("product_id", flat=True)
+        print(product_id)
+
+        # serializer = MakeOrderSerializer(data=request.data)
+        # serializer.is_valid()
+        # product_id = request.data["product_id"]
         if not product_id:
-            return Response({"status": "pizda"})
+            return Response({"status": "pizda", "response": "Cart is empty"})
         products = Products.objects.filter(id__in=product_id).values()
-        # print(products)
 
         smtp_server = 'smtp.gmail.com'
         port = 587
         server = smtplib.SMTP(smtp_server, port)
         server.starttls()
-        # EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-        # EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+
         sender_email = os.getenv("EMAIL_HOST_USER")
         sender_password = os.getenv("EMAIL_HOST_PASSWORD")
         try:
@@ -215,6 +216,11 @@ class MakeOrderAPI(APIView):
             server.send_message(msg)
             print('Сообщение отправлено успешно!')
 
+            for p in product_id:
+                Order.objects.create(user_id=user_id, product_id=p)
+            products = Cart.objects.filter(user_id=user_id)
+            products.delete()
+
         except Exception as e:
             print('Произошла ошибка при отправке сообщения:', e)
 
@@ -229,7 +235,12 @@ class EmailVerify(APIView):
 
     def get(self, request):
         user_id = getToken(request)
+        user = Verify.objects.filter(user_id=user_id)
+        if user:
+            return Response({"status": 400, "response": "User already verify"})
+
         email = User.objects.filter(id=user_id).values("email")[0]["email"]
+
         smtp_server = 'smtp.gmail.com'
         port = 587
         server = smtplib.SMTP(smtp_server, port)
@@ -244,7 +255,6 @@ class EmailVerify(APIView):
             EmailVerifyCode.objects.create(user_id=user_id, verify_code=verify_code)
             table += f'<tr><td>{verify_code}</td></tr>'
 
-            # server.sendmail(sender_email, sender_email, table)
             msg = MIMEMultipart()
             msg['From'] = sender_email
             msg['To'] = email
