@@ -27,6 +27,7 @@ urlpatterns = [
     path("api/v1/filters/", SearchFilterAPI.as_view(), name="filters"),
     path("api/v1/make-order/", MakeOrderAPI.as_view(), name="make-order"),
     path("api/v1/verify/", EmailVerify.as_view(), name="verify"),
+    path("api/v1/orders-list/", OrderViewAPI.as_view(), name="orders-list"),
     path("api/v1/auth/", include("djoser.urls")),
     re_path(r"^auth/", include("djoser.urls.authtoken")),
     path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

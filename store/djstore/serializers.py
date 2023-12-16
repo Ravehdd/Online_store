@@ -36,3 +36,4 @@ class EmailVerifySerializer(serializers.Serializer):
     code = serializers.IntegerField(max_value=9999, min_value=1000)
 
 
+

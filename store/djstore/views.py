@@ -172,6 +172,18 @@ class CartViewAPI(APIView):
         return Response({"status": 200, "data": products_info})
 
 
+class OrderViewAPI(APIView):
+    def get(self, request):
+        user_id = getToken(request)
+        products_id = Order.objects.filter(user_id=user_id).values_list("product_id", flat=True)
+
+        if not products_id:
+            return Response({"status": 404, "response": "Orders is not found"})
+
+        products = Products.objects.filter(id__in=products_id).values("name", "price", "photo")
+        return Response({"status": 200, "data": products})
+
+
 class MakeOrderAPI(APIView):
     def get(self, request):
         user_id = getToken(request)
