@@ -10,6 +10,10 @@ class ListViewSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "price", "description", "photo") #убрал поле in_stock
 
 
+class ProductViewSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+
 class SearchSerializer(serializers.Serializer):
     product_name = serializers.CharField(max_length=255)
 
@@ -34,6 +38,3 @@ class MakeOrderSerializer(serializers.Serializer):
 
 class EmailVerifySerializer(serializers.Serializer):
     code = serializers.IntegerField(max_value=9999, min_value=1000)
-
-
-

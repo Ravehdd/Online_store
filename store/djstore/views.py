@@ -32,13 +32,20 @@ class ProductsAPIView(generics.ListAPIView):
     # permission_classes = (IsAuthenticated,)
 
 
+class ProductPageAPI(APIView):
+    def post(self, request):
+        serializer = ProductViewSerializer(data=request.data)
+        serializer.is_valid()
+        product_id = request.data["id"]
+        product = Products.objects.filter(id=product_id).values()
+        return Response({"status": 200, "data": product})
+
+
 class AddToCartAPI(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         user_id = getToken(request)
-        # auth_header = request.META.get("HTTP_AUTHORIZATION")
-        # auth_type, auth_token = auth_header.split(" ")
         serializer = AddToCartSerializer(data=request.data)
         serializer.is_valid()
         product_id = request.data["id"]
