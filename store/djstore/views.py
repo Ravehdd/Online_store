@@ -38,7 +38,8 @@ class ProductPageAPI(APIView):
         serializer.is_valid()
         product_id = request.data["id"]
         product = Products.objects.filter(id=product_id).values()
-        return Response({"status": 200, "data": product})
+        feedback = Feedback.objects.filter(id=product_id).values()
+        return Response({"status": 200, "data": {"product": product, "feedback": feedback}})
 
 
 class AddToCartAPI(APIView):
@@ -303,6 +304,21 @@ class EmailVerify(APIView):
             return Response({"status": "200", "response": "The user has been successfully verified"})
         else:
             return Response({"status": "400", "response": "Verify code is wrong"})
+
+
+class FeedbackAPI(APIView):
+    def post(self, request):
+        user_id = getToken(request)
+        serializer = FeedbackSerializer(data=request.data)
+        serializer.is_valid()
+        product_id = request.data["product_id"]
+        feedback = request.data["feedback"]
+        is_order = Order.objects.filter(Q(user_id=user_id) & Q(product_id=product_id))
+        if is_order:
+            Feedback.objects.create(user_id=user_id, product_id=product_id, feedback=feedback)
+            return Response({"status": 201, "response": "Feedback has been added successfully"})
+        else:
+            return Response({"status": 400, "response": "Order with this product is not found"})
 
 
 def PageNotFound(request, exception):

@@ -38,3 +38,8 @@ class MakeOrderSerializer(serializers.Serializer):
 
 class EmailVerifySerializer(serializers.Serializer):
     code = serializers.IntegerField(max_value=9999, min_value=1000)
+
+
+class FeedbackSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField()
+    feedback = serializers.CharField()

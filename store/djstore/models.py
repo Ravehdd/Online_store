@@ -73,3 +73,9 @@ class Order(models.Model):
     product = models.ForeignKey(Products, on_delete=models.PROTECT)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
 
+
+class Feedback(models.Model):
+    product = models.ForeignKey("Products", on_delete=models.PROTECT)
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    feedback = models.TextField()
+    time_create = models.DateTimeField(auto_now_add=True)
