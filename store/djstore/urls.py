@@ -30,6 +30,7 @@ urlpatterns = [
     path("api/v1/orders-list/", OrderViewAPI.as_view(), name="orders-list"),
     path("api/v1/product/", ProductPageAPI.as_view(), name="product"),
     path("api/v1/feedback/", FeedbackAPI.as_view(), name="feedback"),
+    path("api/v1/change-amount/", ChangeAmountAPI.as_view(), name="change-amount"),
     path("api/v1/auth/", include("djoser.urls")),
     re_path(r"^auth/", include("djoser.urls.authtoken")),
     path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

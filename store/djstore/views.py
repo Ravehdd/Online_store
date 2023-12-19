@@ -62,6 +62,55 @@ class AddToCartAPI(APIView):
             return Response({"status": 200, "response": "The product has been successfully added to the cart"})
 
 
+class RemoveFromCartAPI(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = RemoveFromCartSerializer(data=request.data)
+        serializer.is_valid()
+        product_id = request.data["product_id"]
+        user_id = request.data["user_id"]
+
+        try:
+            product_on_delete = Cart.objects.get(product_id=product_id, user_id=user_id)
+            product_on_delete.delete()
+            return Response({"status": 204, "response": "Deleted successfully"})
+        except:
+            return Response({"status": 404, "response": "Record not found"})
+
+
+class CartViewAPI(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        user_id = getToken(request)
+
+        products = Cart.objects.filter(user_id=user_id).values("product_id", "amount")
+        products_info = []
+        for product in products:
+            product_id = product["product_id"]
+            product_amount = product["amount"]
+            product_info = dict(Products.objects.filter(id=product_id).values("name", "price", "description", "photo")[0])
+            product_info["amount"] = product_amount
+            products_info.append(product_info)
+        return Response({"status": 200, "data": products_info})
+
+
+class ChangeAmountAPI(APIView):
+    def put(self, request):
+        serializer = ChangeAmountSerializer(data=request.data)
+        serializer.is_valid()
+        user_id = getToken(request)
+        product_id = request.data["product_id"]
+        amount = request.data["amount"]
+        product = Cart.objects.filter(Q(user_id=user_id) & Q(product_id=product_id))
+        if product:
+            product.update(amount=amount)
+            return Response({"status": 200, "response": "Amount has been updated successfully"})
+        else:
+            return Response({"status": 400, "response": "Something went wrong"})
+
+
 class SearchAPI(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
 
@@ -144,40 +193,6 @@ class SearchFilterAPI(APIView):
         products3 = products.intersection(products2)
 
         return Response({"status": 200, "data": products3})
-
-
-class RemoveFromCartAPI(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request):
-        serializer = RemoveFromCartSerializer(data=request.data)
-        serializer.is_valid()
-        product_id = request.data["product_id"]
-        user_id = request.data["user_id"]
-
-        try:
-            product_on_delete = Cart.objects.get(product_id=product_id, user_id=user_id)
-            product_on_delete.delete()
-            return Response({"status": 204, "response": "Deleted successfully"})
-        except:
-            return Response({"status": 404, "response": "Record not found"})
-
-
-class CartViewAPI(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def get(self, request):
-        user_id = getToken(request)
-
-        products = Cart.objects.filter(user_id=user_id).values("product_id", "amount")
-        products_info = []
-        for product in products:
-            product_id = product["product_id"]
-            product_amount = product["amount"]
-            product_info = dict(Products.objects.filter(id=product_id).values("name", "price", "description", "photo")[0])
-            product_info["amount"] = product_amount
-            products_info.append(product_info)
-        return Response({"status": 200, "data": products_info})
 
 
 class OrderViewAPI(APIView):

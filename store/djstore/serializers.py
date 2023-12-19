@@ -43,3 +43,8 @@ class EmailVerifySerializer(serializers.Serializer):
 class FeedbackSerializer(serializers.Serializer):
     product_id = serializers.IntegerField()
     feedback = serializers.CharField()
+
+
+class ChangeAmountSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField()
+    amount = serializers.IntegerField()
