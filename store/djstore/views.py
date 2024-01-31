@@ -15,7 +15,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 
-def getToken(request):
+def getUser(request):
     auth_header = request.META.get("HTTP_AUTHORIZATION")
     auth_type, auth_token = auth_header.split(" ")
 
@@ -24,6 +24,8 @@ def getToken(request):
         cursor.execute(f"SELECT user_id FROM authtoken_token WHERE key='{auth_token}'")
         user_id = cursor.fetchone()[0]
     return user_id
+
+
 
 
 class ProductsAPIView(generics.ListAPIView):
@@ -46,7 +48,7 @@ class AddToCartAPI(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
-        user_id = getToken(request)
+        user_id = getUser(request)
         serializer = AddToCartSerializer(data=request.data)
         serializer.is_valid()
         product_id = request.data["id"]
@@ -83,7 +85,7 @@ class CartViewAPI(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        user_id = getToken(request)
+        user_id = getUser(request)
 
         products = Cart.objects.filter(user_id=user_id).values("product_id", "amount")
         products_info = []
@@ -100,7 +102,7 @@ class ChangeAmountAPI(APIView):
     def put(self, request):
         serializer = ChangeAmountSerializer(data=request.data)
         serializer.is_valid()
-        user_id = getToken(request)
+        user_id = getUser(request)
         product_id = request.data["product_id"]
         amount = request.data["amount"]
         product = Cart.objects.filter(Q(user_id=user_id) & Q(product_id=product_id))
@@ -197,7 +199,7 @@ class SearchFilterAPI(APIView):
 
 class OrderViewAPI(APIView):
     def get(self, request):
-        user_id = getToken(request)
+        user_id = getUser(request)
         products_id = Order.objects.filter(user_id=user_id).values_list("product_id", flat=True)
 
         if not products_id:
@@ -209,7 +211,7 @@ class OrderViewAPI(APIView):
 
 class MakeOrderAPI(APIView):
     def get(self, request):
-        user_id = getToken(request)
+        user_id = getUser(request)
         is_verify = Verify.objects.filter(user_id=user_id).values("verify")[0]["verify"]
         if not is_verify:
             return Response({"status": 403, "response": "User is not verify"})
@@ -269,7 +271,7 @@ class EmailVerify(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        user_id = getToken(request)
+        user_id = getUser(request)
         user = Verify.objects.filter(user_id=user_id)
         if user:
             return Response({"status": 400, "response": "User already verify"})
@@ -310,20 +312,23 @@ class EmailVerify(APIView):
     def post(self, request):
         serializer = EmailVerifySerializer(data=request.data)
         serializer.is_valid()
-        user_id = getToken(request)
+        user_id = getUser(request)
         user_code = int(request.data["code"])
         verify_code = EmailVerifyCode.objects.filter(user_id=user_id).values("verify_code")[0]["verify_code"]
 
         if user_code == verify_code:
             Verify.objects.create(verify=True, user_id=user_id)
+            codes = EmailVerifyCode.objects.filter(user_id=user_id)
+            codes.delete()
             return Response({"status": "200", "response": "The user has been successfully verified"})
+
         else:
             return Response({"status": "400", "response": "Verify code is wrong"})
 
 
 class FeedbackAPI(APIView):
     def post(self, request):
-        user_id = getToken(request)
+        user_id = getUser(request)
         serializer = FeedbackSerializer(data=request.data)
         serializer.is_valid()
         product_id = request.data["product_id"]
